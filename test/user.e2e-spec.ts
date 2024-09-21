@@ -27,7 +27,6 @@ describe('UserController (e2e)', () => {
   });
 
   beforeEach(async () => {
-    // テストケースの前にデータベースをクリーンアップ
     await pool.query('DELETE FROM "user"');
   });
 

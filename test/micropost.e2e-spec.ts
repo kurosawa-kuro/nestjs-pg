@@ -57,7 +57,6 @@ describe('MicroPostController (e2e)', () => {
     expect(response.body).toEqual(expect.any(Array));
     expect(response.body.length).toBeGreaterThan(0);
     
-    // タイトルが 'Test micropost' のマイクロポストが存在することを確認
     const testMicropost = response.body.find(post => post.title === 'Test micropost');
     expect(testMicropost).toBeDefined();
     expect(testMicropost).toHaveProperty('title', 'Test micropost');
