@@ -2,8 +2,9 @@ import { Module } from '@nestjs/common';
 import { Pool } from 'pg';
 import { UserService } from './user.service';
 import { MicroPostService } from './micropost.service';
+import { UserController } from './user.controller';
+import { MicroPostController } from './micropost.controller';
 import * as dotenv from 'dotenv';
-import { AppController } from './app.controller';
 
 // テスト環境かどうか判定し、適切な.envファイルをロード
 dotenv.config({ path: process.env.NODE_ENV === 'test' ? '.env.test' : '.env' });
@@ -26,6 +27,6 @@ dotenv.config({ path: process.env.NODE_ENV === 'test' ? '.env.test' : '.env' });
     UserService,
     MicroPostService,
   ],
-  controllers: [AppController],
+  controllers: [UserController, MicroPostController], // AppControllerを削除し、新しいコントローラを追加
 })
 export class AppModule {}
