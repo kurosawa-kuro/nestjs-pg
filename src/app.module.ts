@@ -1,3 +1,5 @@
+// nestjs-pg\src\app.module.ts
+
 import { Module } from '@nestjs/common';
 import { Pool } from 'pg';
 import { UserService } from './user.service';
