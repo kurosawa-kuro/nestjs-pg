@@ -1,3 +1,4 @@
+// nestjs-pg\src\micropost-category.service.ts
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { Pool } from 'pg';
 

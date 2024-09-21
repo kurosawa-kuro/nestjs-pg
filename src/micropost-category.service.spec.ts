@@ -1,37 +1,82 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { MicropostCategoryService } from './micropost-category.service';
 import { Pool } from 'pg';
 
-@Injectable()
-export class MicropostCategoryService {
-  constructor(
-    @Inject('DATABASE_POOL') private readonly pool: Pool,
-  ) {}
+// Create a mock type for Pool
+type MockPool = {
+  query: jest.Mock;
+};
 
-  async getMicropostCategories(micropostId: number): Promise<any[]> {
-    const query = `
-      SELECT c.id, c.title 
-      FROM category c
-      JOIN micropost_category mc ON c.id = mc.category_id
-      WHERE mc.micropost_id = $1
-    `;
-    const result = await this.pool.query(query, [micropostId]);
-    return result.rows;
-  }
+describe('MicropostCategoryService', () => {
+  let service: MicropostCategoryService;
+  let mockPool: MockPool;
 
-  async getCategoryMicroposts(categoryId: number): Promise<any[]> {
-    const query = `
-      SELECT m.id, m.title, u.id as user_id, u.name as user_name
-      FROM micropost m
-      JOIN micropost_category mc ON m.id = mc.micropost_id
-      JOIN "user" u ON m.user_id = u.id
-      WHERE mc.category_id = $1
-    `;
-    const result = await this.pool.query(query, [categoryId]);
-    return result.rows;
-  }
+  beforeEach(async () => {
+    // Create a mock pool
+    mockPool = {
+      query: jest.fn(),
+    };
 
-  async addCategoryToMicropost(micropostId: number, categoryId: number): Promise<void> {
-    const query = 'INSERT INTO micropost_category(micropost_id, category_id) VALUES($1, $2)';
-    await this.pool.query(query, [micropostId, categoryId]);
-  }
-}
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        MicropostCategoryService,
+        {
+          provide: 'DATABASE_POOL',
+          useValue: mockPool,
+        },
+      ],
+    }).compile();
+
+    service = module.get<MicropostCategoryService>(MicropostCategoryService);
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+
+  describe('getMicropostCategories', () => {
+    it('should return categories for a given micropost', async () => {
+      const mockCategories = [
+        { id: 1, title: 'Category 1' },
+        { id: 2, title: 'Category 2' },
+      ];
+      mockPool.query.mockResolvedValue({ rows: mockCategories });
+
+      const result = await service.getMicropostCategories(1);
+
+      expect(result).toEqual(mockCategories);
+      expect(mockPool.query).toHaveBeenCalledWith(expect.any(String), [1]);
+    });
+  });
+
+  describe('getCategoryMicroposts', () => {
+    it('should return microposts for a given category', async () => {
+      const mockMicroposts = [
+        { id: 1, title: 'Micropost 1', user_id: 1, user_name: 'User 1' },
+        { id: 2, title: 'Micropost 2', user_id: 2, user_name: 'User 2' },
+      ];
+      mockPool.query.mockResolvedValue({ rows: mockMicroposts });
+
+      const result = await service.getCategoryMicroposts(1);
+
+      expect(result).toEqual(mockMicroposts);
+      expect(mockPool.query).toHaveBeenCalledWith(expect.any(String), [1]);
+    });
+  });
+
+  describe('addCategoryToMicropost', () => {
+    it('should add a category to a micropost', async () => {
+      mockPool.query.mockResolvedValue({ rowCount: 1 });
+
+      await service.addCategoryToMicropost(1, 1);
+
+      expect(mockPool.query).toHaveBeenCalledWith(expect.any(String), [1, 1]);
+    });
+
+    it('should throw an error if the insertion fails', async () => {
+      mockPool.query.mockRejectedValue(new Error('Insertion failed'));
+
+      await expect(service.addCategoryToMicropost(1, 1)).rejects.toThrow('Insertion failed');
+    });
+  });
+});
