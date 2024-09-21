@@ -1,5 +1,5 @@
 # ユーザーを作成する
-POST http://localhost:3000/user
+POST http://localhost:3000/users
 Content-Type: application/json
 
 {
