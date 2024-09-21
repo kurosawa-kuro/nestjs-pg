@@ -15,7 +15,7 @@ GET http://localhost:3000/users
 ###
 
 # マイクロポストを作成する
-POST http://localhost:3000/micropost
+POST http://localhost:3000/microposts
 Content-Type: application/json
 
 {
