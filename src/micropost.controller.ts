@@ -1,7 +1,7 @@
-// micropost.controller.ts
-import { Controller, Get, Post, Body, InternalServerErrorException, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, InternalServerErrorException, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { MicroPostService } from './micropost.service';
 import { UserService } from './user.service';
+import { MicropostCategoryService } from './micropost-category.service';
 
 @Controller('microposts')
 export class MicroPostController {
@@ -9,7 +9,8 @@ export class MicroPostController {
 
   constructor(
     private readonly microPostService: MicroPostService,
-    private readonly userService: UserService
+    private readonly userService: UserService,
+    private readonly micropostCategoryService: MicropostCategoryService
   ) {}
 
   @Post()
@@ -44,6 +45,33 @@ export class MicroPostController {
     } catch (error) {
       this.logger.error(`Failed to get microposts: ${error.message}`, error.stack);
       throw new InternalServerErrorException('Failed to get microposts');
+    }
+  }
+
+  @Get(':id/categories')
+  async getMicropostCategories(@Param('id') id: string) {
+    try {
+      const micropostId = parseInt(id, 10);
+      const categories = await this.micropostCategoryService.getMicropostCategories(micropostId);
+      return categories;
+    } catch (error) {
+      this.logger.error(`Failed to get categories for micropost: ${error.message}`, error.stack);
+      throw new InternalServerErrorException('Failed to get categories for micropost');
+    }
+  }
+
+  @Post(':id/categories')
+  async addCategoryToMicropost(
+    @Param('id') id: string,
+    @Body('categoryId') categoryId: number
+  ) {
+    try {
+      const micropostId = parseInt(id, 10);
+      await this.micropostCategoryService.addCategoryToMicropost(micropostId, categoryId);
+      return { message: 'Category added to micropost' };
+    } catch (error) {
+      this.logger.error(`Failed to add category to micropost: ${error.message}`, error.stack);
+      throw new InternalServerErrorException('Failed to add category to micropost');
     }
   }
 }
