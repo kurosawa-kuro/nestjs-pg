@@ -1,0 +1,29 @@
+# ユーザーを作成する
+POST http://localhost:3000/user
+Content-Type: application/json
+
+{
+  "name": "John Doe"
+}
+
+###
+
+
+# すべてのユーザーを取得する
+GET http://localhost:3000/users
+
+###
+
+# マイクロポストを作成する
+POST http://localhost:3000/micropost
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "title": "My first micropost"
+}
+
+###
+
+# すべてのマイクロポストを取得する
+GET http://localhost:3000/microposts
