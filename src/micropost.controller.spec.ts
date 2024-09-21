@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { MicroPostController } from './micropost.controller';
 import { MicroPostService } from './micropost.service';
 import { UserService } from './user.service';
-import { NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { NotFoundException, BadRequestException, InternalServerErrorException, Logger } from '@nestjs/common';
 
 describe('MicroPostController', () => {
   let microPostController: MicroPostController;
@@ -32,6 +32,8 @@ describe('MicroPostController', () => {
     microPostController = module.get<MicroPostController>(MicroPostController);
     microPostService = module.get<MicroPostService>(MicroPostService);
     userService = module.get<UserService>(UserService);
+
+    jest.spyOn(Logger.prototype, 'error').mockImplementation(() => {}); // ロガーのモック
   });
 
   it('should create a microPost and return a success message', async () => {
@@ -57,8 +59,37 @@ describe('MicroPostController', () => {
     await expect(microPostController.createMicroPost(userId, title)).rejects.toThrow(NotFoundException);
   });
 
+  it('should throw BadRequestException when user does not exist (foreign key constraint)', async () => {
+    const userId = 1;
+    const title = 'My first micropost';
+
+    jest.spyOn(userService, 'getUserById').mockResolvedValue({ id: userId, name: 'Test User' });
+    jest.spyOn(microPostService, 'createMicroPost').mockRejectedValue({ constraint: 'micropost_user_id_fkey' });
+
+    await expect(microPostController.createMicroPost(userId, title)).rejects.toThrow(BadRequestException);
+    await expect(microPostController.createMicroPost(userId, title)).rejects.toThrow(`User with id ${userId} does not exist`);
+  });
+
+  it('should throw InternalServerErrorException when micropost creation fails', async () => {
+    const userId = 1;
+    const title = 'My first micropost';
+
+    jest.spyOn(userService, 'getUserById').mockResolvedValue({ id: userId, name: 'Test User' });
+    jest.spyOn(microPostService, 'createMicroPost').mockRejectedValue(new Error('Database error'));
+
+    await expect(microPostController.createMicroPost(userId, title)).rejects.toThrow(InternalServerErrorException);
+    await expect(microPostController.createMicroPost(userId, title)).rejects.toThrow('Failed to create micropost');
+  });
+
   it('should return an array of microPosts', async () => {
     const result = await microPostController.getMicroPosts();
     expect(result).toEqual([{ id: 1, userId: 1, title: 'My first micropost' }]);
+  });
+
+  it('should throw InternalServerErrorException when getting microposts fails', async () => {
+    jest.spyOn(microPostService, 'getMicroPosts').mockRejectedValue(new Error('Database error'));
+
+    await expect(microPostController.getMicroPosts()).rejects.toThrow(InternalServerErrorException);
+    await expect(microPostController.getMicroPosts()).rejects.toThrow('Failed to get microposts');
   });
 });
