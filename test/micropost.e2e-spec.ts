@@ -4,11 +4,13 @@ import * as request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { UserService } from './../src/user.service';
 import { MicroPostService } from './../src/micropost.service';
+import { Pool } from 'pg';
 
 describe('MicroPostController (e2e)', () => {
   let app: INestApplication;
   let userService: UserService;
   let micropostService: MicroPostService;
+  let pool: Pool;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -18,15 +20,22 @@ describe('MicroPostController (e2e)', () => {
     app = moduleFixture.createNestApplication();
     userService = moduleFixture.get<UserService>(UserService);
     micropostService = moduleFixture.get<MicroPostService>(MicroPostService);
+    pool = moduleFixture.get<Pool>('DATABASE_POOL');
     await app.init();
   });
 
   afterAll(async () => {
     await app.close();
+    await pool.end();
+  });
+
+  beforeEach(async () => {
+    // テストケースの前にデータベースをクリーンアップ
+    await pool.query('DELETE FROM "micropost"');
+    await pool.query('DELETE FROM "user"');
   });
 
   it('should create a micropost (POST /microposts)', async () => {
-    // ユーザーを作成
     const user = await userService.createUser('Test User');
 
     const response = await request(app.getHttpServer())
@@ -38,7 +47,6 @@ describe('MicroPostController (e2e)', () => {
   });
 
   it('should retrieve all microposts (GET /microposts)', async () => {
-    // テスト用のユーザーとマイクロポストを作成
     const user = await userService.createUser('Another Test User');
     await micropostService.createMicroPost(user.id, 'Test micropost');
 
@@ -48,6 +56,10 @@ describe('MicroPostController (e2e)', () => {
 
     expect(response.body).toEqual(expect.any(Array));
     expect(response.body.length).toBeGreaterThan(0);
-    expect(response.body[0]).toHaveProperty('title', 'Test micropost');
+    
+    // タイトルが 'Test micropost' のマイクロポストが存在することを確認
+    const testMicropost = response.body.find(post => post.title === 'Test micropost');
+    expect(testMicropost).toBeDefined();
+    expect(testMicropost).toHaveProperty('title', 'Test micropost');
   });
 });
