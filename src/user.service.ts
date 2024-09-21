@@ -1,3 +1,4 @@
+// user.service.ts (新しく追加)
 import { Injectable, Inject } from '@nestjs/common';
 import { Pool } from 'pg';
 
@@ -16,6 +17,12 @@ export class UserService {
     const query = 'INSERT INTO "user"(name) VALUES($1) RETURNING id, name';
     const result = await this.pool.query(query, [name]);
     return result.rows[0];
+  }
+
+  async getUserById(id: number): Promise<User | null> {
+    const query = 'SELECT id, name FROM "user" WHERE id = $1';
+    const result = await this.pool.query(query, [id]);
+    return result.rows[0] || null;
   }
 
   async getUsers(): Promise<User[]> {

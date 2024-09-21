@@ -1,3 +1,4 @@
+// micropost.e2e-spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
@@ -30,7 +31,6 @@ describe('MicroPostController (e2e)', () => {
   });
 
   beforeEach(async () => {
-    // テストケースの前にデータベースをクリーンアップ
     await pool.query('DELETE FROM "micropost"');
     await pool.query('DELETE FROM "user"');
   });
@@ -43,7 +43,11 @@ describe('MicroPostController (e2e)', () => {
       .send({ userId: user.id, title: 'My first micropost' })
       .expect(201);
 
-    expect(response.body).toEqual({ message: 'MicroPost created' });
+    expect(response.body).toHaveProperty('message', 'MicroPost created');
+    expect(response.body).toHaveProperty('micropost');
+    expect(response.body.micropost).toHaveProperty('id');
+    expect(response.body.micropost).toHaveProperty('userId', user.id);
+    expect(response.body.micropost).toHaveProperty('title', 'My first micropost');
   });
 
   it('should retrieve all microposts (GET /microposts)', async () => {
@@ -60,5 +64,6 @@ describe('MicroPostController (e2e)', () => {
     const testMicropost = response.body.find(post => post.title === 'Test micropost');
     expect(testMicropost).toBeDefined();
     expect(testMicropost).toHaveProperty('title', 'Test micropost');
+    expect(testMicropost).toHaveProperty('userId', user.id);
   });
 });
